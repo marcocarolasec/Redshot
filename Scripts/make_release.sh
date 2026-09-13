@@ -38,9 +38,10 @@ rm -f "$DMG"
 hdiutil create -volname "Redshot $VERSION" -srcfolder "$STAGE" -ov -format UDZO -quiet "$DMG"
 
 ZIP="build/Redshot-$VERSION.zip"
-rm -f "$ZIP" build/Redshot.zip
+rm -f "$ZIP" build/Redshot.zip build/Redshot.dmg
 ditto -c -k --keepParent "$APP" "$ZIP"
 cp "$ZIP" build/Redshot.zip
+cp "$DMG" build/Redshot.dmg
 
 rm -rf "$STAGE"
 echo "Listo:"

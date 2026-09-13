@@ -47,4 +47,5 @@ jobs:
             build/Redshot-*.dmg
             build/Redshot-*.zip
             build/Redshot.zip
+            build/Redshot.dmg
           generate_release_notes: true

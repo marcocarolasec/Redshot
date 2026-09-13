@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redshot — screenshots and clipboard history for pentesters, on macOS</title>
+<meta name="description" content="Capture, pixelate secrets, annotate and find every screenshot again. A free, local-only screenshot and clipboard tool for macOS built for security work.">
+<meta property="og:title" content="Redshot for macOS">
+<meta property="og:description" content="Screenshots and clipboard history built for pentest work. Free, open source, nothing leaves your Mac.">
+<meta property="og:image" content="https://marcocarolasec.github.io/Redshot/icon.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="icon.png">
+<style>
+  :root {
+    --bg: #0e1118;
+    --bg2: #141924;
+    --card: #1a2030;
+    --line: #26304a;
+    --text: #e8ecf4;
+    --muted: #93a0b8;
+    --accent: #3478f6;
+    --accent2: #5b93ff;
+    --red: #ff5d5d;
+    --green: #3ecf8e;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.6 -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--accent2); text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+  code, kbd, pre { font-family: "SF Mono", Menlo, Consolas, monospace; }
+  kbd {
+    display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 13px;
+    background: #202839; border: 1px solid var(--line); border-bottom-width: 2px; color: var(--text);
+  }
+
+  /* nav */
+  nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; color: var(--text); }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  nav .links { display: flex; gap: 22px; align-items: center; font-size: 15px; }
+  nav .links a { color: var(--muted); }
+  nav .links a:hover { color: var(--text); }
+  .lang { border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 13px; color: var(--muted); cursor: pointer; background: transparent; }
+  .lang:hover { color: var(--text); }
+
+  /* hero */
+  .hero { padding: 64px 0 40px; text-align: center; }
+  .hero h1 { font-size: clamp(34px, 6vw, 60px); line-height: 1.08; letter-spacing: -0.02em; margin: 0 0 18px; font-weight: 800; }
+  .hero h1 em { font-style: normal; color: var(--accent2); }
+  .hero p.lead { font-size: 19px; color: var(--muted); max-width: 640px; margin: 0 auto 30px; }
+  .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; align-items: center; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; border-radius: 12px;
+    font-weight: 600; font-size: 16px; border: 1px solid transparent; cursor: pointer; transition: transform .08s, background .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--accent); color: #fff; box-shadow: 0 8px 30px rgba(52,120,246,.35); }
+  .btn.primary:hover { background: var(--accent2); }
+  .btn.ghost { background: transparent; border-color: var(--line); color: var(--text); }
+  .btn.ghost:hover { background: var(--bg2); }
+  .btn svg { width: 18px; height: 18px; }
+  .fine { margin-top: 14px; font-size: 13px; color: var(--muted); }
+  .fine a { color: var(--muted); text-decoration: underline; }
+
+  .install {
+    margin: 26px auto 0; max-width: 720px; display: flex; align-items: center; gap: 10px;
+    background: var(--bg2); border: 1px solid var(--line); border-radius: 12px; padding: 10px 10px 10px 16px;
+  }
+  .install code { flex: 1; overflow-x: auto; white-space: nowrap; font-size: 13.5px; color: #cdd6e6; text-align: left; }
+  .install code .p { color: var(--muted); }
+  .copy { background: #202839; border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 8px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  .copy:hover { background: #283246; }
+
+  /* mock window */
+  .shot { margin: 56px auto 0; max-width: 960px; }
+  .window {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.02) inset;
+  }
+  .titlebar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; background: #1f2637; border-bottom: 1px solid var(--line); }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .titlebar span.t { margin-left: 8px; font-size: 13px; color: var(--muted); }
+  .toolbar { display: flex; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: #1a2131; flex-wrap: wrap; align-items: center; }
+  .tool { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 64px; padding: 6px 0; border-radius: 8px; font-size: 10px; color: var(--muted); }
+  .tool svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .tool.on { background: var(--accent); color: #fff; }
+  .toolbar .sp { flex: 1; }
+  .toolbar .b { padding: 6px 12px; border-radius: 7px; font-size: 12px; border: 1px solid var(--line); color: var(--text); }
+  .toolbar .b.p { background: var(--accent); border-color: transparent; color: #fff; }
+  .canvas { padding: 26px; background: #0b0e14; text-align: left; }
+  .term {
+    position: relative; padding-right: 220px; background: #101418; border-radius: 8px; padding: 16px 18px; font-family: "SF Mono", Menlo, monospace; font-size: 13px; line-height: 1.7; color: #b9c3d6;
+    border: 1px solid #1e2632; overflow: hidden;
+  }
+  .term .g { color: var(--green); } .term .y { color: #f4c66b; } .term .r { color: var(--red); }
+  .pix {
+    display: inline-block; vertical-align: middle; height: 16px; border-radius: 2px;
+    background: repeating-linear-gradient(90deg,#3b4a66 0 6px,#59698a 6px 12px,#2e3b52 12px 18px,#6e7ea1 18px 24px);
+    background-size: 24px 16px; image-rendering: pixelated; box-shadow: 0 0 0 1px #2a3550 inset;
+  }
+  .arrow { position: absolute; right: 40px; top: 58px; width: 150px; height: 70px; }
+  .callout { position: absolute; right: 24px; top: 128px; color: var(--red); font: 600 13px -apple-system, sans-serif; }
+  .box { position: absolute; left: 14px; bottom: 14px; width: 260px; height: 26px; border: 2.5px solid var(--red); border-radius: 4px; }
+
+  /* sections */
+  section { padding: 72px 0; }
+  section h2 { font-size: clamp(26px, 4vw, 36px); letter-spacing: -0.01em; margin: 0 0 12px; }
+  section p.sub { color: var(--muted); font-size: 17px; max-width: 640px; margin: 0 0 36px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+  .card h3 { margin: 0 0 8px; font-size: 17px; }
+  .card p { margin: 0; color: var(--muted); font-size: 15px; }
+  .card .ic { width: 38px; height: 38px; border-radius: 10px; background: #202a40; display: grid; place-items: center; margin-bottom: 14px; }
+  .card .ic svg { width: 20px; height: 20px; stroke: var(--accent2); fill: none; stroke-width: 1.8; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; counter-reset: s; }
+  .step { position: relative; padding: 22px 22px 22px 64px; background: var(--bg2); border: 1px solid var(--line); border-radius: var(--radius); }
+  .step::before { counter-increment: s; content: counter(s); position: absolute; left: 20px; top: 20px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .step h3 { margin: 0 0 6px; font-size: 16px; }
+  .step p { margin: 0; color: var(--muted); font-size: 14.5px; }
+
+  .band { background: var(--bg2); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 26px; font-size: 15px; }
+  .keys div { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--line); color: var(--muted); }
+  .keys div span:first-child { color: var(--text); white-space: nowrap; }
+
+  details { border: 1px solid var(--line); border-radius: 12px; background: var(--card); margin-bottom: 10px; }
+  summary { padding: 16px 20px; cursor: pointer; font-weight: 600; list-style: none; display: flex; justify-content: space-between; }
+  summary::after { content: "+"; color: var(--muted); }
+  details[open] summary::after { content: "–"; }
+  details p { padding: 0 20px 18px; margin: 0; color: var(--muted); font-size: 15px; }
+
+  .final { text-align: center; padding: 80px 0; }
+  .final h2 { margin-bottom: 8px; }
+  footer { padding: 30px 0 50px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  footer a { color: var(--muted); }
+  footer a:hover { color: var(--text); }
+
+  [data-es] { display: none; }
+  html.es [data-en] { display: none; }
+  html.es [data-es] { display: revert; }
+
+  @media (max-width: 640px) {
+    .term { padding-right: 18px; }
+    .arrow, .callout { display: none; }
+    nav .links a:not(.lang) { display: none; }
+    .hero { padding-top: 40px; }
+    .install { flex-direction: column; align-items: stretch; }
+    .install code { white-space: normal; word-break: break-all; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#"><img src="icon.png" alt=""> Redshot</a>
+    <div class="links">
+      <a href="#features"><span data-en>Features</span><span data-es>Funciones</span></a>
+      <a href="#how"><span data-en>How it works</span><span data-es>Cómo funciona</span></a>
+      <a href="#faq">FAQ</a>
+      <a href="https://github.com/marcocarolasec/Redshot">GitHub</a>
+      <button class="lang" id="langBtn" type="button">ES</button>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <h1 data-en>Screenshots for pentesters.<br>Pixelate the secret <em>before</em> it leaves your Mac.</h1>
+    <h1 data-es>Capturas para pentesters.<br>Pixela el secreto <em>antes</em> de que salga de tu Mac.</h1>
+
+    <p class="lead" data-en>Redshot keeps every screenshot and everything you copy in one searchable place, opens an editor right after each capture, and never sends a byte anywhere. Free and open source.</p>
+    <p class="lead" data-es>Redshot guarda cada captura y todo lo que copias en un solo sitio con búsqueda, abre un editor justo después de capturar, y no manda ni un byte a ningún sitio. Gratis y de código abierto.</p>
+
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/marcocarolasec/Redshot/releases/latest/download/Redshot.dmg" id="dl">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <span data-en>Download for macOS</span><span data-es>Descargar para macOS</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/marcocarolasec/Redshot">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.7.5.5 5.7.5 12c0 5.1 3.3 9.4 7.9 10.9.6.1.8-.2.8-.6v-2c-3.2.7-3.9-1.4-3.9-1.4-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.7 0-1.3.5-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 015.8 0c2.2-1.5 3.2-1.2 3.2-1.2.6 1.6.2 2.8.1 3.1.8.8 1.2 1.8 1.2 3.1 0 4.4-2.7 5.4-5.3 5.7.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6 4.6-1.5 7.9-5.8 7.9-10.9C23.5 5.7 18.3.5 12 .5z"/></svg>
+        <span data-en>Source on GitHub</span><span data-es>Código en GitHub</span>
+      </a>
+    </div>
+    <p class="fine">
+      <span data-en>macOS 14 Sonoma or later · Apple Silicon and Intel · MIT license · <a href="#faq">Why does macOS warn me on first open?</a></span>
+      <span data-es>macOS 14 Sonoma o superior · Apple Silicon e Intel · Licencia MIT · <a href="#faq">¿Por qué avisa macOS al abrirla?</a></span>
+    </p>
+
+    <div class="install">
+      <code><span class="p">$</span> curl -fsSL https://raw.githubusercontent.com/marcocarolasec/Redshot/main/Scripts/install.sh | bash</code>
+      <button class="copy" type="button" id="copyBtn"><span data-en>Copy</span><span data-es>Copiar</span></button>
+    </div>
+    <p class="fine"><span data-en>One line. Installs to Applications and skips the Gatekeeper prompt.</span><span data-es>Una línea. Instala en Aplicaciones y evita el aviso de Gatekeeper.</span></p>
+
+    <div class="shot">
+      <div class="window" aria-hidden="true">
+        <div class="titlebar"><span class="dot" style="background:#ff5f57"></span><span class="dot" style="background:#febc2e"></span><span class="dot" style="background:#28c840"></span><span class="t">Edit screenshot</span></div>
+        <div class="toolbar">
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-6 1-3 6z"/></svg>Select</div>
+          <div class="tool on"><svg viewBox="0 0 24 24"><path d="M5 19L19 5M11 5h8v8"/></svg>Arrow</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M4 20L20 4"/></svg>Line</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" rx="1"/></svg>Rectangle</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Ellipse</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M5 6h14M12 6v13"/></svg>Text</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M10 6a9 9 0 0111 6 9 9 0 01-3 3M6 8a9 9 0 00-3 4 9 9 0 0011 5"/></svg>Pixelate</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M4 18h16M9 14l7-7 3 3-7 7H9z"/></svg>Highlight</div>
+          <div class="tool"><svg viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 002 2h14M2 6h14a2 2 0 012 2v14"/></svg>Crop</div>
+          <span class="sp"></span>
+          <span class="b">Copy</span><span class="b p">Save</span>
+        </div>
+        <div class="canvas">
+          <div class="term">
+            <div><span class="g">asier@kali</span>:<span class="y">~</span>$ nxc smb 10.10.14.0/24 -u svc_backup -p <span class="pix" style="width:110px"></span> --shares</div>
+            <div>SMB   10.10.14.21   445   DC01   [*] Windows Server 2022 Build 20348 (name:DC01) (domain:corp.local)</div>
+            <div>SMB   10.10.14.21   445   DC01   [+] corp.local\svc_backup:<span class="pix" style="width:110px"></span> <span class="y">(Pwn3d!)</span></div>
+            <div>SMB   10.10.14.21   445   DC01   [*] Enumerated shares</div>
+            <div>SMB   10.10.14.21   445   DC01   ADMIN$    <span class="r">READ,WRITE</span>   Remote Admin</div>
+            <div>SMB   10.10.14.21   445   DC01   C$        <span class="r">READ,WRITE</span>   Default share</div>
+            <div>SMB   10.10.14.21   445   DC01   Backups   <span class="r">READ,WRITE</span></div>
+            <div class="callout">svc_backup is local admin on DC01</div>
+            <svg class="arrow" viewBox="0 0 150 70"><path d="M120 66 C 100 30, 60 14, 14 12" stroke="#ff5d5d" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M28 4 L 12 12 L 26 22" stroke="#ff5d5d" stroke-width="3" fill="none" stroke-linejoin="round" stroke-linecap="round"/></svg>
+            <div class="box"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+</div>
+
+<section id="features">
+  <div class="wrap">
+    <h2 data-en>Built for the report, not for Instagram</h2>
+    <h2 data-es>Hecha para el informe, no para Instagram</h2>
+    <p class="sub" data-en>Every screenshot tool can draw an arrow. Redshot cares about what happens to the credential in the corner, and about finding the screenshot again three weeks later.</p>
+    <p class="sub" data-es>Cualquier herramienta de capturas dibuja una flecha. Redshot se preocupa de lo que pasa con la credencial de la esquina, y de encontrar la captura tres semanas después.</p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M3 3l18 18M10 6a9 9 0 0111 6 9 9 0 01-3 3M6 8a9 9 0 00-3 4 9 9 0 0011 5"/></svg></div>
+        <h3 data-en>Real pixelation</h3><h3 data-es>Pixelado de verdad</h3>
+        <p data-en>Pixels are downsampled and thrown away. Not a blur filter someone can reverse with a script.</p>
+        <p data-es>Los píxeles se reducen y se descartan. No es un desenfoque que alguien pueda revertir con un script.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v5m0 8v5M3 12h5m8 0h5"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3 data-en>Editor opens by itself</h3><h3 data-es>El editor se abre solo</h3>
+        <p data-en>Capture with <kbd>⌃⌘S</kbd>, annotate, hit Save. Arrows, boxes, text, highlight, crop. The original is kept untouched.</p>
+        <p data-es>Captura con <kbd>⌃⌘S</kbd>, anota, Guardar. Flechas, cajas, texto, resaltado, recorte. El original queda intacto.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></div>
+        <h3 data-en>Search inside images</h3><h3 data-es>Busca dentro de las imágenes</h3>
+        <p data-en>Vision OCR runs on every capture. Type a hostname or a username and get the screenshot where it appeared.</p>
+        <p data-es>El OCR de Vision pasa por cada captura. Escribe un hostname o un usuario y aparece la captura donde salía.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M9 4V2h6v2M9 10h6M9 14h6"/></svg></div>
+        <h3 data-en>Clipboard history too</h3><h3 data-es>También el portapapeles</h3>
+        <p data-en>Text, links, code, colors, files, tagged with the app they came from. Pick one and it pastes where you were.</p>
+        <p data-es>Texto, enlaces, código, colores, archivos, con la app de origen. Eliges uno y se pega donde estabas.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3 data-en>Knows what not to keep</h3><h3 data-es>Sabe lo que no debe guardar</h3>
+        <p data-en>Skips anything 1Password or Bitwarden mark as concealed, apps you exclude, and text that looks like an API key, a private key, a JWT or a card number.</p>
+        <p data-es>Ignora lo que 1Password o Bitwarden marcan como confidencial, las apps que excluyas, y el texto que parece una clave de API, una clave privada, un JWT o una tarjeta.</p>
+      </div>
+      <div class="card">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M8 15h3"/></svg></div>
+        <h3 data-en>Local. Actually local.</h3><h3 data-es>Local. Local de verdad.</h3>
+        <p data-en>SQLite and PNGs in Application Support. No account, no sync, no telemetry, no network code in the binary. Read the source.</p>
+        <p data-es>SQLite y PNGs en Application Support. Sin cuenta, sin sincronización, sin telemetría, sin código de red en el binario. Lee el código.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="band">
+  <div class="wrap">
+    <h2 data-en>From capture to report in three moves</h2>
+    <h2 data-es>De la captura al informe en tres pasos</h2>
+    <p class="sub" data-en>The routine you already do, minus Preview, Finder and the folder called "screenshots final v2".</p>
+    <p class="sub" data-es>La rutina que ya haces, sin Vista Previa, sin Finder y sin la carpeta "capturas final v2".</p>
+    <div class="steps">
+      <div class="step">
+        <h3 data-en>Capture</h3><h3 data-es>Captura</h3>
+        <p data-en><kbd>⌃⌘S</kbd> for an area, <kbd>⌃⌘W</kbd> for a window, <kbd>⌃⌘F</kbd> for the screen. The system crosshair you already know.</p>
+        <p data-es><kbd>⌃⌘S</kbd> región, <kbd>⌃⌘W</kbd> ventana, <kbd>⌃⌘F</kbd> pantalla. La cruz del sistema que ya conoces.</p>
+      </div>
+      <div class="step">
+        <h3 data-en>Redact and annotate</h3><h3 data-es>Redacta y anota</h3>
+        <p data-en>The editor pops up. Pixelate the password, draw the arrow, crop the noise. Save keeps both versions.</p>
+        <p data-es>Salta el editor. Pixela la contraseña, dibuja la flecha, recorta el ruido. Guardar conserva las dos versiones.</p>
+      </div>
+      <div class="step">
+        <h3 data-en>Find it again</h3><h3 data-es>Vuelve a encontrarla</h3>
+        <p data-en><kbd>⌃⌘V</kbd> opens the history. Search by text, app or what the OCR read. Drag it straight into the report.</p>
+        <p data-es><kbd>⌃⌘V</kbd> abre el historial. Busca por texto, app o lo que leyó el OCR. Arrástrala directamente al informe.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="shortcuts">
+  <div class="wrap">
+    <h2 data-en>Shortcuts</h2><h2 data-es>Atajos</h2>
+    <p class="sub" data-en>Chosen not to collide with the system ones. Hands stay on the keyboard.</p>
+    <p class="sub" data-es>Elegidos para no chocar con los del sistema. Las manos no salen del teclado.</p>
+    <div class="keys">
+      <div><span><kbd>⌃⌘S</kbd></span><span data-en>Capture area</span><span data-es>Capturar región</span></div>
+      <div><span><kbd>⌃⌘W</kbd></span><span data-en>Capture window</span><span data-es>Capturar ventana</span></div>
+      <div><span><kbd>⌃⌘F</kbd></span><span data-en>Capture full screen</span><span data-es>Capturar pantalla</span></div>
+      <div><span><kbd>⌃⌘V</kbd></span><span data-en>Open the history</span><span data-es>Abrir el historial</span></div>
+      <div><span><kbd>⌃⌘1…9</kbd></span><span data-en>Paste the nth recent item</span><span data-es>Pegar el elemento n</span></div>
+      <div><span><kbd>⇧</kbd></span><span data-en>Square, circle, 45°</span><span data-es>Cuadrado, círculo, 45°</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="band">
+  <div class="wrap">
+    <h2>FAQ</h2>
+    <details>
+      <summary><span data-en>macOS says it can't verify the app. Is it safe?</span><span data-es>macOS dice que no puede verificar la app. ¿Es seguro?</span></summary>
+      <p data-en>Redshot isn't notarized by Apple (that costs 99 $/year and I'd rather keep it free). Go to System Settings → Privacy &amp; Security and click "Open Anyway", once. Or use the one-line installer above, which removes the quarantine flag for you. The whole source is on GitHub if you want to check what you're running.</p>
+      <p data-es>Redshot no está notarizada por Apple (cuesta 99 $ al año y prefiero mantenerla gratis). Ve a Ajustes del Sistema → Privacidad y seguridad y pulsa "Abrir de todos modos", una sola vez. O usa el instalador de una línea, que quita la cuarentena por ti. Todo el código está en GitHub por si quieres ver qué ejecutas.</p>
+    </details>
+    <details>
+      <summary><span data-en>What permissions does it need?</span><span data-es>¿Qué permisos necesita?</span></summary>
+      <p data-en>Screen Recording, because that's how macOS gates screenshots for every app. Accessibility is optional and only used to paste directly into the app you were using. A short guide on first launch walks you through both.</p>
+      <p data-es>Grabación de pantalla, porque así controla macOS las capturas de cualquier app. Accesibilidad es opcional y solo sirve para pegar directamente en la app en la que estabas. Una guía al arrancar te lleva por los dos.</p>
+    </details>
+    <details>
+      <summary><span data-en>Does anything leave my machine?</span><span data-es>¿Sale algo de mi equipo?</span></summary>
+      <p data-en>No. There is no networking code in the app. Data lives in ~/Library/Application Support/Redshot and deleting that folder removes everything.</p>
+      <p data-es>No. La app no tiene código de red. Los datos viven en ~/Library/Application Support/Redshot y borrar esa carpeta lo elimina todo.</p>
+    </details>
+    <details>
+      <summary><span data-en>Is the pixelation reversible?</span><span data-es>¿El pixelado se puede revertir?</span></summary>
+      <p data-en>No. The region is downscaled to a handful of blocks and re-drawn; the original pixels aren't in the saved file. That's different from a blur, which can sometimes be partially recovered.</p>
+      <p data-es>No. La zona se reduce a unos pocos bloques y se vuelve a dibujar; los píxeles originales no están en el fichero guardado. Es distinto de un desenfoque, que a veces se recupera parcialmente.</p>
+    </details>
+    <details>
+      <summary><span data-en>Who makes this?</span><span data-es>¿Quién lo hace?</span></summary>
+      <p data-en>Asier Barranco, offensive security consultant, for his own engagements. Published by REDOPS. Issues and pull requests on <a href="https://github.com/marcocarolasec/Redshot">GitHub</a>.</p>
+      <p data-es>Asier Barranco, consultor de seguridad ofensiva, para sus propios engagements. Publicado por REDOPS. Issues y pull requests en <a href="https://github.com/marcocarolasec/Redshot">GitHub</a>.</p>
+    </details>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2 data-en>Your next screenshot could be the one with the password in it.</h2>
+    <h2 data-es>Tu próxima captura puede ser la que lleva la contraseña.</h2>
+    <p class="sub" style="margin:0 auto 28px" data-en>Free, open source, one download.</p>
+    <p class="sub" style="margin:0 auto 28px" data-es>Gratis, código abierto, una descarga.</p>
+    <div class="cta">
+      <a class="btn primary" href="https://github.com/marcocarolasec/Redshot/releases/latest/download/Redshot.dmg">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+        <span data-en>Download Redshot</span><span data-es>Descargar Redshot</span>
+      </a>
+      <a class="btn ghost" href="https://github.com/marcocarolasec/Redshot/releases"><span data-en>All releases</span><span data-es>Todas las versiones</span></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="y"></span> Asier Barranco · REDOPS SECURITY LTD · MIT</span>
+    <span><a href="https://github.com/marcocarolasec/Redshot">GitHub</a> · <a href="https://redghostops.com">redghostops.com</a> · <a href="https://github.com/marcocarolasec/Redshot/issues"><span data-en>Report a bug</span><span data-es>Reportar un fallo</span></a></span>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('y').textContent = new Date().getFullYear();
+
+  // Idioma: ?lang=es, preferencia guardada, o idioma del navegador.
+  const root = document.documentElement, btn = document.getElementById('langBtn');
+  function setLang(es) {
+    root.classList.toggle('es', es);
+    root.lang = es ? 'es' : 'en';
+    btn.textContent = es ? 'EN' : 'ES';
+    try { localStorage.setItem('lang', es ? 'es' : 'en'); } catch (e) {}
+  }
+  let pref = null;
+  try { pref = new URLSearchParams(location.search).get('lang') || localStorage.getItem('lang'); } catch (e) {}
+  setLang(pref ? pref === 'es' : (navigator.language || '').toLowerCase().startsWith('es'));
+  btn.addEventListener('click', () => setLang(!root.classList.contains('es')));
+
+  // Copiar el instalador.
+  const cmd = 'curl -fsSL https://raw.githubusercontent.com/marcocarolasec/Redshot/main/Scripts/install.sh | bash';
+  document.getElementById('copyBtn').addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(cmd); } catch (err) {}
+    const b = e.currentTarget, old = b.innerHTML;
+    b.textContent = root.classList.contains('es') ? 'Copiado' : 'Copied';
+    setTimeout(() => { b.innerHTML = old; }, 1500);
+  });
+
+  // Versión actual en el botón, desde la API de GitHub (sin bloquear si falla).
+  fetch('https://api.github.com/repos/marcocarolasec/Redshot/releases/latest')
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { if (j && j.tag_name) document.getElementById('dl').insertAdjacentHTML('beforeend', '<span style="opacity:.7;font-weight:500">' + j.tag_name + '</span>'); })
+    .catch(() => {});
+</script>
+</body>
+</html>
