@@ -143,6 +143,19 @@
   footer a { color: var(--muted); }
   footer a:hover { color: var(--text); }
 
+  /* modal post-descarga */
+  .modal { position: fixed; inset: 0; background: rgba(5,8,14,.75); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+  .modal.open { display: flex; }
+  .modal .dlg { background: var(--card); border: 1px solid var(--line); border-radius: 16px; max-width: 560px; width: 100%; padding: 26px; box-shadow: 0 30px 80px rgba(0,0,0,.6); }
+  .modal h3 { margin: 0 0 8px; font-size: 22px; }
+  .modal p { color: var(--muted); margin: 0 0 14px; font-size: 15px; }
+  .modal ol { margin: 0 0 18px; padding-left: 22px; color: var(--text); font-size: 15px; }
+  .modal ol li { margin-bottom: 8px; }
+  .modal .alt { background: var(--bg2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; font-size: 13.5px; color: var(--muted); }
+  .modal .alt code { color: #cdd6e6; word-break: break-all; }
+  .modal .row { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+  .warn { display: inline-block; background: #2a2412; color: #f4c66b; border: 1px solid #4a3d16; border-radius: 6px; padding: 2px 8px; font-size: 12px; margin-left: 8px; vertical-align: middle; }
+
   [data-es] { display: none; }
   html.es [data-en] { display: none; }
   html.es [data-es] { display: revert; }
@@ -189,8 +202,8 @@
       </a>
     </div>
     <p class="fine">
-      <span data-en>macOS 14 Sonoma or later · Apple Silicon and Intel · MIT license · <a href="#faq">Why does macOS warn me on first open?</a></span>
-      <span data-es>macOS 14 Sonoma o superior · Apple Silicon e Intel · Licencia MIT · <a href="#faq">¿Por qué avisa macOS al abrirla?</a></span>
+      <span data-en>macOS 14 or later · Apple Silicon and Intel · MIT · Not notarized: macOS will ask you to allow it once. <a href="#" id="howOpen">See how</a>.</span>
+      <span data-es>macOS 14 o superior · Apple Silicon e Intel · MIT · No notarizada: macOS te pedirá permitirla una vez. <a href="#" id="howOpenEs">Ver cómo</a>.</span>
     </p>
 
     <div class="install">
@@ -371,6 +384,33 @@
   </div>
 </section>
 
+<div class="modal" id="modal" role="dialog" aria-modal="true">
+  <div class="dlg">
+    <h3><span data-en>Downloading. One more step.</span><span data-es>Descargando. Un paso más.</span></h3>
+    <p data-en>Redshot isn't notarized by Apple, so the first time you open it macOS shows "Apple could not verify Redshot". That's expected. To open it:</p>
+    <p data-es>Redshot no está notarizada por Apple, así que la primera vez que la abras macOS dirá "Apple no ha podido verificar Redshot". Es lo esperado. Para abrirla:</p>
+    <ol data-en>
+      <li>Drag Redshot to Applications and open it. Click <b>OK</b> on the warning.</li>
+      <li>Open <b>System Settings → Privacy &amp; Security</b>, scroll down to "Redshot was blocked" and click <b>Open Anyway</b>.</li>
+      <li>Open Redshot again. Done; it never asks again.</li>
+    </ol>
+    <ol data-es>
+      <li>Arrastra Redshot a Aplicaciones y ábrela. Pulsa <b>Aceptar</b> en el aviso.</li>
+      <li>Abre <b>Ajustes del Sistema → Privacidad y seguridad</b>, baja hasta "Se ha bloqueado Redshot" y pulsa <b>Abrir de todos modos</b>.</li>
+      <li>Vuelve a abrir Redshot. Listo; no vuelve a preguntar.</li>
+    </ol>
+    <div class="alt">
+      <span data-en>Prefer to skip all that? Paste this in Terminal and it installs without any prompt:</span>
+      <span data-es>¿Prefieres saltarte todo eso? Pega esto en Terminal y se instala sin ningún aviso:</span><br>
+      <code>curl -fsSL https://raw.githubusercontent.com/marcocarolasec/Redshot/main/Scripts/install.sh | bash</code>
+    </div>
+    <div class="row">
+      <button class="btn ghost" type="button" id="modalCopy"><span data-en>Copy command</span><span data-es>Copiar comando</span></button>
+      <button class="btn primary" type="button" id="modalClose"><span data-en>Got it</span><span data-es>Entendido</span></button>
+    </div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <span>© <span id="y"></span> Asier Barranco · REDOPS SECURITY LTD · MIT</span>
@@ -397,6 +437,21 @@
   // Copiar el instalador.
   const cmd = 'curl -fsSL https://raw.githubusercontent.com/marcocarolasec/Redshot/main/Scripts/install.sh | bash';
   document.getElementById('copyBtn').addEventListener('click', async (e) => {
+    try { await navigator.clipboard.writeText(cmd); } catch (err) {}
+    const b = e.currentTarget, old = b.innerHTML;
+    b.textContent = root.classList.contains('es') ? 'Copiado' : 'Copied';
+    setTimeout(() => { b.innerHTML = old; }, 1500);
+  });
+
+  // Aviso post-descarga: la descarga sigue su curso, el modal explica el paso de Gatekeeper.
+  const modal = document.getElementById('modal');
+  const openModal = (e) => { if (e) e.preventDefault(); modal.classList.add('open'); };
+  document.querySelectorAll('a[href$="Redshot.dmg"]').forEach(a => a.addEventListener('click', () => setTimeout(() => modal.classList.add('open'), 400)));
+  document.getElementById('howOpen').addEventListener('click', openModal);
+  document.getElementById('howOpenEs').addEventListener('click', openModal);
+  document.getElementById('modalClose').addEventListener('click', () => modal.classList.remove('open'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+  document.getElementById('modalCopy').addEventListener('click', async (e) => {
     try { await navigator.clipboard.writeText(cmd); } catch (err) {}
     const b = e.currentTarget, old = b.innerHTML;
     b.textContent = root.classList.contains('es') ? 'Copiado' : 'Copied';
