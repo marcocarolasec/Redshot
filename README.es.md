@@ -1,4 +1,4 @@
-<p align="center"><img src="Resources/AppIcon-256.png" width="96" alt=""></p>
+<p align="center"><img src="docs/cover.png" width="720" alt="Redshot"></p>
 
 # Redshot
 
