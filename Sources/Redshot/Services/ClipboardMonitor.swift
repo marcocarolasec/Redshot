@@ -19,7 +19,8 @@ final class ClipboardMonitor {
     func start() {
         guard timer == nil else { return }
         let t = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.check() }
+            guard let self else { return }
+            Task { @MainActor in self.check() }
         }
         RunLoop.main.add(t, forMode: .common)
         timer = t

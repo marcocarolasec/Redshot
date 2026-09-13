@@ -24,7 +24,8 @@ final class AnnotationCanvasView: NSView, NSTextFieldDelegate {
         wantsLayer = true
         layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
         cancellable = model.objectWillChange.sink { [weak self] _ in
-            Task { @MainActor in self?.needsDisplay = true }
+            guard let self else { return }
+            Task { @MainActor in self.needsDisplay = true }
         }
     }
 
