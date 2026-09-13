@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Redshot: build, instalar en /Applications y relanzar",
+      "type": "shell",
+      "command": "cd \"${workspaceFolder}\" && { [ -f Package.swift ] || cd Redshot; } && bash Scripts/build_app.sh && pkill -x Redshot; sleep 1; rm -rf /Applications/Redshot.app && cp -R build/Redshot.app /Applications/ && LOG=\"$(dirname \"$PWD\")/redshot.log\"; : > \"$LOG\"; (nohup /Applications/Redshot.app/Contents/MacOS/Redshot >> \"$LOG\" 2>&1 &) ; sleep 3; echo '--- pgrep ---'; pgrep -fl Redshot; echo '--- log ---'; cat \"$LOG\"; echo '>>> Redshot relanzado desde /Applications. Log en' \"$LOG\"",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Redshot: ver log",
+      "type": "shell",
+      "command": "cd \"${workspaceFolder}\" && { [ -f Package.swift ] || cd Redshot; } && echo '--- pgrep ---'; pgrep -fl Redshot; echo '--- log ---'; cat \"$(dirname \"$PWD\")/redshot.log\"",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    }
+  ]
+}
